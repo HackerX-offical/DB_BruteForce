@@ -325,7 +325,58 @@ async function runPentest() {
   await attemptPrivilegeEscalation();
 
   // 2. Dashboard Checks
-  await checkDashboardWriteAccess();
+  // await checkDashboardWriteAccess(); // General check
+
+  // 3. Deep Dive: Notice Board Attack
+  await focusNoticeBoardAttack();
+}
+
+async function focusNoticeBoardAttack() {
+  console.log(`\n===================================================`);
+  console.log(`   DEEP DIVE: NOTICE BOARD (notices collection)`);
+  console.log(`===================================================`);
+
+  // Payload Variations
+  const attacks = [
+    {
+      name: "Standard_Notice",
+      data: { text: "Hacked Notice", link: "#", timestamp: new Date() },
+    },
+    { name: "Minimal_Notice", data: { text: "Just Text" } },
+    {
+      name: "Admin_Notice",
+      data: { text: "Admin Alert", isAdmin: true, official: true },
+    }, // Mass Assignment
+    {
+      name: "HTML_Injection",
+      data: {
+        text: "<h1>Hacked</h1><script>alert(1)</script>",
+        link: "javascript:alert(1)",
+      },
+    }, // XSS payload
+  ];
+
+  for (const attack of attacks) {
+    process.stdout.write(`[:] Testing payload '${attack.name}'... `);
+    try {
+      const docRef = await addDoc(collection(db, "notices"), {
+        ...attack.data,
+        _pentest_timestamp: new Date(),
+      });
+      console.log(GREEN + "SUCCESS! [VULNERABLE]" + RESET);
+      console.log(GREEN + `    |-> Notice posted! ID: ${docRef.id}` + RESET);
+
+      // Attempt cleanup
+      await deleteDoc(docRef);
+    } catch (e: any) {
+      if (e.code === "permission-denied") {
+        console.log(RED + "BLOCKED [SECURE]" + RESET);
+      } else {
+        console.log(YELLOW + `ERROR: ${e.code}` + RESET);
+      }
+    }
+  }
+  console.log(`===================================================\n`);
 }
 
 runPentest();
