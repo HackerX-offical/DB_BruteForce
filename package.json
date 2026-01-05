@@ -1,21 +1,21 @@
 {
-  "name": "scrape",
-  "version": "1.0.0",
+  "name": "gyan-niketan-security-audit",
+  "version": "2.0.0",
+  "description": "Professional Security Audit Tool for Gyan Niketan Admin Panel",
+  "author": "Suryanshu Nabheet",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "pentest": "ts-node Firebase/index.ts"
+    "start:ts": "ts-node index.ts",
+    "build": "tsc"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "dependencies": {
-    "@types/node": "^25.0.3",
-    "axios": "^1.8.4",
-    "firebase": "^12.7.0",
-    "firebase-admin": "^13.6.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "firebase": "^11.0.0",
+    "chalk": "^5.3.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "ts-node": "^10.9.1",
+    "@types/node": "^20.0.0"
   }
 }
